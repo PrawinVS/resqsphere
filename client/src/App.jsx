@@ -424,7 +424,7 @@ function App() {
                 <MetricCard
                   label="CANDIDATE EVENTS"
                   value={accidents.length}
-                  detail="Session history in memory"
+                  detail="Stored in MongoDB"
                   accent={accidents.length ? "orange" : "blue"}
                 />
               </div>
@@ -485,7 +485,7 @@ function App() {
                 <SectionHeading
                   eyebrow="EVENT TIMELINE"
                   title="Recent candidate events"
-                  description="Events recorded by the current Express session."
+                  description="Events recorded and persisted in MongoDB."
                   action={
                     <button
                       className="text-button"
@@ -585,9 +585,9 @@ function App() {
 
               <div className="metrics-grid two-columns">
                 <MetricCard
-                  label="TOTAL SESSION EVENTS"
+                  label="TOTAL LOGGED EVENTS"
                   value={accidents.length}
-                  detail="Stored in the current server session"
+                  detail="Stored in MongoDB database"
                   accent="orange"
                 />
                 <MetricCard
@@ -616,7 +616,7 @@ function App() {
                 <section className="panel contact-form-panel">
                   <SectionHeading
                     title="Add a contact"
-                    description="Contact details are kept in server memory for now."
+                    description="Contact details are stored securely in MongoDB."
                   />
 
                   <form
@@ -689,7 +689,7 @@ function App() {
                 <section className="panel">
                   <SectionHeading
                     title={`Saved contacts (${contacts.length})`}
-                    description="These records are not yet persistent."
+                    description="Persistent records stored in MongoDB."
                   />
 
                   {contacts.length === 0 ? (
@@ -782,6 +782,13 @@ function App() {
                   status={apiStatus === "online" ? "Online" : "Offline"}
                   type={apiStatus === "online" ? "success" : "danger"}
                   code="Port 5000"
+                />
+                <HardwareCard
+                  name="MongoDB Database"
+                  detail={apiStatus === "online" ? "Persistent telemetry, events & contacts" : "Database status pending"}
+                  status={apiStatus === "online" ? "Connected" : "Unknown"}
+                  type={apiStatus === "online" ? "success" : "neutral"}
+                  code="resqsphere"
                 />
                 <HardwareCard
                   name="Edge AI"
