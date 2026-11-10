@@ -75,11 +75,28 @@ function MapRecenter({ location }) {
   return null;
 }
 
-function VehicleMap({ location, large = false }) {
+function VehicleMap({ location, history = [], large = false }) {
   const hasFix =
     location?.gpsFix === true &&
     Number.isFinite(location.latitude) &&
     Number.isFinite(location.longitude);
+
+  const routePoints = (history || [])
+    .filter(
+      (p) =>
+        p.gpsFix === true &&
+        Number.isFinite(p.latitude) &&
+        Number.isFinite(p.longitude)
+    )
+    .map((p) => [p.latitude, p.longitude])
+    .reverse();
+
+  if (hasFix && routePoints.length > 0) {
+    const last = routePoints[routePoints.length - 1];
+    if (last[0] !== location.latitude || last[1] !== location.longitude) {
+      routePoints.push([location.latitude, location.longitude]);
+    }
+  }
 
   return (
     <div className={`map-frame ${large ? "map-large" : ""}`}>
@@ -95,6 +112,18 @@ function VehicleMap({ location, large = false }) {
         />
 
         <MapRecenter location={location} />
+
+        {routePoints.length > 1 && (
+          <Polyline
+            positions={routePoints}
+            pathOptions={{
+              color: "#2563eb",
+              weight: 4,
+              opacity: 0.75,
+              dashArray: "6, 8"
+            }}
+          />
+        )}
 
         {hasFix && (
           <CircleMarker
