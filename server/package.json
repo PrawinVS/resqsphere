@@ -5,7 +5,12 @@
   "main": "index.js",
   "scripts": {
     "dev": "nodemon server.js",
-  "start": "node server.js"
+    "start": "node server.js",
+    "seed": "node scripts/seed.js",
+    "test": "node scripts/test-api.js",
+    "test:accident": "node scripts/test-accident.js",
+    "simulate": "node scripts/simulate-telemetry.js",
+    "simulate:rollover": "node scripts/simulate-telemetry.js --rollover"
   },
   "keywords": [],
   "author": "",
@@ -14,7 +19,9 @@
   "dependencies": {
     "cors": "^2.8.6",
     "dotenv": "^18.0.9",
-    "express": "^5.3.0"
+    "express": "^5.3.0",
+    "mongoose": "^9.12.1",
+    "twilio": "^6.3.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.14"

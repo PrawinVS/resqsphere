@@ -5,13 +5,14 @@ import {
   TileLayer,
   CircleMarker,
   Popup,
+  Polyline,
   useMap
 } from "react-leaflet";
 
 import "leaflet/dist/leaflet.css";
 import "./App.css";
 
-const API_URL = "http://localhost:5000";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5001";
 
 const NAV_ITEMS = [
   { id: "overview", label: "Overview", icon: "▦" },
@@ -74,11 +75,28 @@ function MapRecenter({ location }) {
   return null;
 }
 
-function VehicleMap({ location, large = false }) {
+function VehicleMap({ location, history = [], large = false }) {
   const hasFix =
     location?.gpsFix === true &&
     Number.isFinite(location.latitude) &&
     Number.isFinite(location.longitude);
+
+  const routePoints = (history || [])
+    .filter(
+      (p) =>
+        p.gpsFix === true &&
+        Number.isFinite(p.latitude) &&
+        Number.isFinite(p.longitude)
+    )
+    .map((p) => [p.latitude, p.longitude])
+    .reverse();
+
+  if (hasFix && routePoints.length > 0) {
+    const last = routePoints[routePoints.length - 1];
+    if (last[0] !== location.latitude || last[1] !== location.longitude) {
+      routePoints.push([location.latitude, location.longitude]);
+    }
+  }
 
   return (
     <div className={`map-frame ${large ? "map-large" : ""}`}>
@@ -94,6 +112,18 @@ function VehicleMap({ location, large = false }) {
         />
 
         <MapRecenter location={location} />
+
+        {routePoints.length > 1 && (
+          <Polyline
+            positions={routePoints}
+            pathOptions={{
+              color: "#2563eb",
+              weight: 4,
+              opacity: 0.75,
+              dashArray: "6, 8"
+            }}
+          />
+        )}
 
         {hasFix && (
           <CircleMarker
@@ -424,7 +454,7 @@ function App() {
                 <MetricCard
                   label="CANDIDATE EVENTS"
                   value={accidents.length}
-                  detail="Session history in memory"
+                  detail="Stored in MongoDB"
                   accent={accidents.length ? "orange" : "blue"}
                 />
               </div>
@@ -485,7 +515,7 @@ function App() {
                 <SectionHeading
                   eyebrow="EVENT TIMELINE"
                   title="Recent candidate events"
-                  description="Events recorded by the current Express session."
+                  description="Events recorded and persisted in MongoDB."
                   action={
                     <button
                       className="text-button"
@@ -585,9 +615,9 @@ function App() {
 
               <div className="metrics-grid two-columns">
                 <MetricCard
-                  label="TOTAL SESSION EVENTS"
+                  label="TOTAL LOGGED EVENTS"
                   value={accidents.length}
-                  detail="Stored in the current server session"
+                  detail="Stored in MongoDB database"
                   accent="orange"
                 />
                 <MetricCard
@@ -616,7 +646,7 @@ function App() {
                 <section className="panel contact-form-panel">
                   <SectionHeading
                     title="Add a contact"
-                    description="Contact details are kept in server memory for now."
+                    description="Contact details are stored securely in MongoDB."
                   />
 
                   <form
@@ -689,7 +719,7 @@ function App() {
                 <section className="panel">
                   <SectionHeading
                     title={`Saved contacts (${contacts.length})`}
-                    description="These records are not yet persistent."
+                    description="Persistent records stored in MongoDB."
                   />
 
                   {contacts.length === 0 ? (
@@ -781,7 +811,14 @@ function App() {
                   detail={apiStatus === "online" ? "Dashboard API responding" : "API unreachable"}
                   status={apiStatus === "online" ? "Online" : "Offline"}
                   type={apiStatus === "online" ? "success" : "danger"}
-                  code="Port 5000"
+                  code="Port 5001"
+                />
+                <HardwareCard
+                  name="MongoDB Database"
+                  detail={apiStatus === "online" ? "Persistent telemetry, events & contacts" : "Database status pending"}
+                  status={apiStatus === "online" ? "Connected" : "Unknown"}
+                  type={apiStatus === "online" ? "success" : "neutral"}
+                  code="resqsphere"
                 />
                 <HardwareCard
                   name="Edge AI"
@@ -845,6 +882,7 @@ function EventTable({ accidents }) {
             <th>GPS location</th>
             <th>Tilt</th>
             <th>Status</th>
+            <th>Voice Call</th>
           </tr>
         </thead>
         <tbody>
@@ -882,6 +920,35 @@ function EventTable({ accidents }) {
               </td>
               <td>
                 <StatusPill type="warning">{event.status}</StatusPill>
+              </td>
+              <td>
+                {event.callSid ? (
+                  <div>
+                    <StatusPill
+                      type={
+                        event.callStatus === "FAILED"
+                          ? "danger"
+                          : event.callStatus === "SIMULATED"
+                            ? "neutral"
+                            : "success"
+                      }
+                    >
+                      {event.callStatus === "SIMULATED"
+                        ? "Simulated Call"
+                        : event.callStatus === "ALERT_DISPATCHED"
+                          ? "Calling"
+                          : event.callStatus}
+                    </StatusPill>
+                    {event.emergencyContactCalled?.phone && (
+                      <span className="table-subtext">
+                        {event.emergencyContactCalled.name ? `${event.emergencyContactCalled.name}: ` : ""}
+                        {event.emergencyContactCalled.phone}
+                      </span>
+                    )}
+                  </div>
+                ) : (
+                  <span className="table-subtext">No call</span>
+                )}
               </td>
             </tr>
           ))}

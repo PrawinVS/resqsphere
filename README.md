@@ -1,0 +1,147 @@
+# ResQSphere — Smart Vehicle Safety & Telemetry Platform
+
+ResQSphere (ResQLink) is an IoT-enabled vehicle monitoring and accident candidate detection system. Telemetry streams from an on-board ESP32 unit (equipped with GPS and IMU sensors) to an Express.js backend and is persisted in **MongoDB**, with live visualization on a React + Vite dashboard.
+
+---
+
+## Architecture Overview
+
+```
+                      +-------------------+
+                      |   ESP32 Device    |
+                      | (GPS + IMU Sensor)|
+                      +---------+---------+
+                                |
+                     HTTP POST  | Telemetry
+                                v
+               +---------------------------------+
+               |        Express.js Backend       |
+               |         (Port 5001)             |
+               +----------------+----------------+
+                                |
+                     Mongoose   | Driver
+                                v
+               +---------------------------------+
+               |        MongoDB Database         |
+               |        (Port 27017)             |
+               |  - devices                      |
+               |  - telemetries (timeseries)     |
+               |  - accidentlogs                 |
+               |  - contacts                     |
+               +----------------+----------------+
+                                ^
+                     REST API   | Polling / State
+                                |
+               +----------------+----------------+
+               |      React Vite Dashboard       |
+               |         (Port 5173)             |
+               +---------------------------------+
+```
+
+---
+
+## MongoDB Collections & Schema
+
+1. **`devices`** ([models/Device.js](server/models/Device.js))
+   - Stores the digital twin / live telemetry state of each vehicle unit.
+   - Fields: `deviceId`, `vehicleNumber`, `gpsFix`, `latitude`, `longitude`, `satellites`, `speedKmph`, `imuReady`, `ax`, `ay`, `az`, `gx`, `gy`, `gz`, `accelMagnitude`, `tiltDeg`, `eventType`, `previousEventType`, `updatedAt`.
+
+2. **`telemetries`** ([models/Telemetry.js](server/models/Telemetry.js))
+   - Persistent historical time-series log of all telemetry points.
+   - Indexed on `{ deviceId: 1, timestamp: -1 }`.
+
+3. **`accidentlogs`** ([models/AccidentLog.js](server/models/AccidentLog.js))
+   - Stores rollover candidate events, crash alerts, and Twilio voice dispatch tracking.
+   - Fields: `deviceId`, `vehicleNumber`, `eventType`, `status`, `timestamp`, `latitude`, `longitude`, `gpsFix`, `tiltDeg`, `note`, `callSid`, `callStatus`, `emergencyContactCalled`, `voiceMessage`.
+
+4. **`contacts`** ([models/Contact.js](server/models/Contact.js))
+   - Stores emergency contacts with validation.
+   - Fields: `name`, `relationship`, `phone`, `createdAt`.
+
+---
+
+## API Endpoints
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/api/health` | Health check & MongoDB connection status |
+| `POST` | `/api/telemetry/location` | Ingest live GPS + IMU telemetry from ESP32 |
+| `GET` | `/api/telemetry/latest` | Fetch latest live location for the dashboard |
+| `GET` | `/api/telemetry/history` | Retrieve historical telemetry points |
+| `GET` | `/api/accidents` | Retrieve candidate accident & rollover events |
+| `POST` | `/api/accidents/report` | Report an accident and trigger a dynamic Twilio Voice call |
+| `GET` | `/api/contacts` | Retrieve emergency contacts list |
+| `POST` | `/api/contacts` | Add a new emergency contact |
+| `DELETE` | `/api/contacts/:id` | Remove an emergency contact |
+
+---
+
+## Getting Started
+
+### 1. Prerequisites
+- **Node.js** (v18+ recommended)
+- **MongoDB** running locally on port `27017` (e.g. `brew services start mongodb-community`)
+
+### 2. Backend Setup (`resqsphere/server`)
+```bash
+cd resqsphere/server
+
+# Install dependencies (express, cors, dotenv, mongoose)
+npm install
+
+# Seed starter contacts and sample telemetry into MongoDB
+npm run seed
+
+# Run automated integration tests
+npm test
+
+# Test accident logging & Twilio Voice Call alert dispatch
+npm run test:accident
+
+# Start the server (runs on http://localhost:5001)
+npm run dev
+```
+
+### 3. Frontend Setup (`resqsphere/client`)
+```bash
+cd resqsphere/client
+
+# Install dependencies
+npm install
+
+# Start Vite development server (runs on http://localhost:5173)
+npm run dev
+```
+
+### 4. Telemetry Stream Simulator (Optional)
+If you don't have the physical ESP32 connected, you can run the built-in simulator to test real-time map tracking and alerts:
+
+```bash
+cd resqsphere/server
+
+# Simulate normal driving movement
+npm run simulate
+
+# Simulate rollover candidate event (triggers tilt alert after 5s)
+npm run simulate:rollover
+```
+
+---
+
+## ESP32 Hardware & Wiring
+
+The Arduino firmware sketch is located at [`firmware/resqlink_esp32/resqlink_esp32.ino`](firmware/resqlink_esp32/resqlink_esp32.ino).
+
+| Component | Pin on Sensor | ESP32 GPIO Pin | Description |
+|---|---|---|---|
+| **NEO-6M GPS** | `TX` | `GPIO 16` (RX2) | Hardware UART2 receive |
+| | `RX` | `GPIO 17` (TX2) | Hardware UART2 transmit |
+| | `VCC` | `3.3V` / `5V` | Power supply |
+| | `GND` | `GND` | Ground |
+| **MPU6050 IMU** | `SDA` | `GPIO 21` | I2C Data |
+| | `SCL` | `GPIO 22` | I2C Clock |
+| | `VCC` | `3.3V` | Power supply |
+| | `GND` | `GND` | Ground |
+| **Status LED** | Anode | `GPIO 2` | Onboard status LED |
+
+
