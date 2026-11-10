@@ -16,7 +16,7 @@ ResQSphere (ResQLink) is an IoT-enabled vehicle monitoring and accident candidat
                                 v
                +---------------------------------+
                |        Express.js Backend       |
-               |         (Port 5001)             |
+               |         (Port 5000)             |
                +----------------+----------------+
                                 |
                      Mongoose   | Driver
@@ -98,7 +98,7 @@ npm test
 # Test accident logging & Twilio Voice Call alert dispatch
 npm run test:accident
 
-# Start the server (runs on http://localhost:5001)
+# Start the server (runs on http://localhost:5000)
 npm run dev
 ```
 
@@ -143,5 +143,4 @@ The Arduino firmware sketch is located at [`firmware/resqlink_esp32/resqlink_esp
 | | `VCC` | `3.3V` | Power supply |
 | | `GND` | `GND` | Ground |
 | **Status LED** | Anode | `GPIO 2` | Onboard status LED |
-
 

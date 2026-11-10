@@ -7,7 +7,7 @@
  *   npm run simulate:rollover    # Simulates a rollover event after 5 seconds
  */
 
-const API_URL = process.env.API_URL || "http://localhost:5001/api/telemetry/location";
+const API_URL = process.env.API_URL || "http://localhost:5000/api/telemetry/location";
 const isRolloverMode = process.argv.includes("--rollover");
 
 let lat = 12.971598;
