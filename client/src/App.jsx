@@ -12,7 +12,7 @@ import {
 import "leaflet/dist/leaflet.css";
 import "./App.css";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5001";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 const NAV_ITEMS = [
   { id: "overview", label: "Overview", icon: "▦" },
@@ -811,7 +811,7 @@ function App() {
                   detail={apiStatus === "online" ? "Dashboard API responding" : "API unreachable"}
                   status={apiStatus === "online" ? "Online" : "Offline"}
                   type={apiStatus === "online" ? "success" : "danger"}
-                  code="Port 5001"
+                  code="Port 5000"
                 />
                 <HardwareCard
                   name="MongoDB Database"
