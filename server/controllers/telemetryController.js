@@ -1,6 +1,8 @@
 import Device from "../models/Device.js";
 import Telemetry from "../models/Telemetry.js";
 import AccidentLog from "../models/AccidentLog.js";
+import Contact from "../models/Contact.js";
+import { makeEmergencyVoiceCall } from "../services/twilioService.js";
 
 const EVENT_TYPES = ["CALIBRATING", "NORMAL", "ROLLOVER_CANDIDATE"];
 
@@ -65,19 +67,40 @@ export async function receiveTelemetry(req, res, next) {
 
     const isCandidate = eventType === "ROLLOVER_CANDIDATE";
 
-    // Create an accident record in MongoDB when candidate event begins
+    // Create an accident record in MongoDB and initiate Twilio voice call when candidate event begins
     if (isCandidate && prevEventType !== eventType) {
+      const primaryContact = await Contact.findOne().sort({ createdAt: 1 });
+      let callResult = null;
+      if (primaryContact?.phone) {
+        try {
+          callResult = await makeEmergencyVoiceCall({
+            to: primaryContact.phone,
+            vehicleNumber: telemetryData.vehicleNumber,
+            latitude: telemetryData.latitude,
+            longitude: telemetryData.longitude
+          });
+        } catch (callErr) {
+          console.error("[Twilio Auto-Alert Error]", callErr.message);
+        }
+      }
+
       await AccidentLog.create({
         deviceId: telemetryData.deviceId,
         vehicleNumber: telemetryData.vehicleNumber,
         eventType,
-        status: "CANDIDATE — verify",
+        status: callResult ? "ALERT_DISPATCHED" : "CANDIDATE — verify",
         timestamp: now,
         latitude: telemetryData.latitude,
         longitude: telemetryData.longitude,
         gpsFix: telemetryData.gpsFix,
         tiltDeg: telemetryData.tiltDeg,
-        note: "Tilt threshold triggered; prototype event, not a confirmed crash."
+        note: "Tilt threshold triggered; prototype event, not a confirmed crash.",
+        callSid: callResult?.callSid || null,
+        callStatus: callResult?.status || "PENDING",
+        emergencyContactCalled: primaryContact
+          ? { name: primaryContact.name, phone: primaryContact.phone }
+          : undefined,
+        voiceMessage: callResult?.twiml || null
       });
     }
 

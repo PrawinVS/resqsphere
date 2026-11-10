@@ -44,6 +44,22 @@ const accidentLogSchema = new mongoose.Schema(
     note: {
       type: String,
       default: "Tilt threshold triggered; prototype event, not a confirmed crash."
+    },
+    callSid: {
+      type: String,
+      default: null
+    },
+    callStatus: {
+      type: String,
+      default: "PENDING"
+    },
+    emergencyContactCalled: {
+      name: { type: String, default: null },
+      phone: { type: String, default: null }
+    },
+    voiceMessage: {
+      type: String,
+      default: null
     }
   },
   {

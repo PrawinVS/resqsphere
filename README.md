@@ -16,7 +16,7 @@ ResQSphere (ResQLink) is an IoT-enabled vehicle monitoring and accident candidat
                                 v
                +---------------------------------+
                |        Express.js Backend       |
-               |         (Port 5000)             |
+               |         (Port 5001)             |
                +----------------+----------------+
                                 |
                      Mongoose   | Driver
@@ -94,7 +94,7 @@ npm run seed
 # Run automated integration tests
 npm test
 
-# Start the server (runs on http://localhost:5000)
+# Start the server (runs on http://localhost:5001)
 npm run dev
 ```
 

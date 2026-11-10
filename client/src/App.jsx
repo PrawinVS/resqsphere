@@ -5,13 +5,14 @@ import {
   TileLayer,
   CircleMarker,
   Popup,
+  Polyline,
   useMap
 } from "react-leaflet";
 
 import "leaflet/dist/leaflet.css";
 import "./App.css";
 
-const API_URL = "http://localhost:5000";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5001";
 
 const NAV_ITEMS = [
   { id: "overview", label: "Overview", icon: "▦" },
@@ -781,7 +782,7 @@ function App() {
                   detail={apiStatus === "online" ? "Dashboard API responding" : "API unreachable"}
                   status={apiStatus === "online" ? "Online" : "Offline"}
                   type={apiStatus === "online" ? "success" : "danger"}
-                  code="Port 5000"
+                  code="Port 5001"
                 />
                 <HardwareCard
                   name="MongoDB Database"
@@ -852,6 +853,7 @@ function EventTable({ accidents }) {
             <th>GPS location</th>
             <th>Tilt</th>
             <th>Status</th>
+            <th>Voice Call</th>
           </tr>
         </thead>
         <tbody>
@@ -889,6 +891,35 @@ function EventTable({ accidents }) {
               </td>
               <td>
                 <StatusPill type="warning">{event.status}</StatusPill>
+              </td>
+              <td>
+                {event.callSid ? (
+                  <div>
+                    <StatusPill
+                      type={
+                        event.callStatus === "FAILED"
+                          ? "danger"
+                          : event.callStatus === "SIMULATED"
+                            ? "neutral"
+                            : "success"
+                      }
+                    >
+                      {event.callStatus === "SIMULATED"
+                        ? "Simulated Call"
+                        : event.callStatus === "ALERT_DISPATCHED"
+                          ? "Calling"
+                          : event.callStatus}
+                    </StatusPill>
+                    {event.emergencyContactCalled?.phone && (
+                      <span className="table-subtext">
+                        {event.emergencyContactCalled.name ? `${event.emergencyContactCalled.name}: ` : ""}
+                        {event.emergencyContactCalled.phone}
+                      </span>
+                    )}
+                  </div>
+                ) : (
+                  <span className="table-subtext">No call</span>
+                )}
               </td>
             </tr>
           ))}

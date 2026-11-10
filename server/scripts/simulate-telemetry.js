@@ -7,7 +7,7 @@
  *   npm run simulate:rollover    # Simulates a rollover event after 5 seconds
  */
 
-const API_URL = process.env.API_URL || "http://localhost:5000/api/telemetry/location";
+const API_URL = process.env.API_URL || "http://localhost:5001/api/telemetry/location";
 const isRolloverMode = process.argv.includes("--rollover");
 
 let lat = 12.971598;
@@ -62,21 +62,28 @@ async function sendPacket() {
       body: JSON.stringify(payload)
     });
 
-    const data = await res.json();
+    const text = await res.text();
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch {
+      throw new Error(`Server returned HTTP ${res.status}: ${text.slice(0, 80)}`);
+    }
+
     const time = new Date().toLocaleTimeString();
     if (res.ok) {
       console.log(
-        `[${time}] Packet #${step} sent | Speed: ${payload.speedKmph} km/h | Tilt: ${payload.tiltDeg}° | Event: ${payload.eventType} | Status: Saved to MongoDB`
+        `[${time}] Packet #${step} sent | Speed: ${payload.speedKmph} km/h | Tilt: ${payload.tiltDeg}° | Event: ${payload.eventType} | MongoDB: Updated`
       );
     } else {
-      console.error(`[${time}] Error (${res.status}):`, data.message);
+      console.error(`[${time}] Error (${res.status}):`, data.message || text);
     }
   } catch (err) {
     console.error(`[Error] Could not reach ${API_URL}:`, err.message);
   }
 }
 
-// Send every 2 seconds
+// Send initial packet immediately, then every 2 seconds
 sendPacket();
 const interval = setInterval(sendPacket, 2000);
 
@@ -85,4 +92,3 @@ process.on("SIGINT", () => {
   console.log("\nSimulator stopped.");
   process.exit(0);
 });
-
