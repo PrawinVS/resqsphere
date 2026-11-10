@@ -13,9 +13,12 @@ const PORT = process.env.PORT || 5001;
 const BASE_URL = `http://localhost:${PORT}`;
 
 async function runAccidentTest() {
+  const targetPhone = process.argv[2] || "+919876543210";
+
   console.log("==================================================");
   console.log(" Testing Accident Reporting & Twilio Voice Alert");
-  console.log(` Target Server: ${BASE_URL}`);
+  console.log(` Target Server:  ${BASE_URL}`);
+  console.log(` Target Phone:   ${targetPhone}`);
   console.log("==================================================\n");
 
   const mockPayload = {
@@ -29,8 +32,8 @@ async function runAccidentTest() {
       address: "MG Road Junction, Bangalore"
     },
     emergencyContact: {
-      name: "Highway Patrol Dispatch",
-      phone: "+919876543210"
+      name: "Emergency Contact",
+      phone: targetPhone
     },
     note: "Automated bench simulation test: vehicle rollover threshold crossed."
   };

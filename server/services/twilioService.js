@@ -47,7 +47,7 @@ export function buildEmergencyTwiML({ vehicleNumber, latitude, longitude, addres
 }
 
 /**
- * Initiates an outbound Twilio Voice call with dynamic TwiML
+ * Initiates an outbound Twilio Voice call with dynamic TwiML speech
  */
 export async function makeEmergencyVoiceCall({
   to,
@@ -76,9 +76,13 @@ export async function makeEmergencyVoiceCall({
     };
   }
 
+  // Twilio Trial Accounts disallow the raw inline 'twiml' parameter.
+  // Using Twilio's official Twimlet echo service hosts the dynamic XML URL seamlessly.
+  const twimlUrl = `https://twimlets.com/echo?Twiml=${encodeURIComponent(twiml)}`;
+
   try {
     const call = await client.calls.create({
-      twiml,
+      url: twimlUrl,
       to,
       from: fromNumber
     });
